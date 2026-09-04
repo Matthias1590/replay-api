@@ -1,5 +1,8 @@
 import { AwsClient } from "aws4fetch";
 
+const REPLAY_MAGIC_OFFSET = 0x2c6;
+const REPLAY_MAGIC = "Ares-Core";
+
 const ALLOWED_ORIGINS = new Set([
 	"http://127.0.0.1:3000",
 	"http://localhost:3000",
@@ -251,6 +254,12 @@ export default {
 
 			const object = await env.valorant_replays.get(
 				event.object.key,
+				{
+					range: {
+						offset: REPLAY_MAGIC_OFFSET,
+						length: REPLAY_MAGIC.length,
+					},
+				},
 			);
 
 			if (!object) {
@@ -338,6 +347,30 @@ export default {
 					"Duplicate replay:",
 					hash,
 				);
+
+				continue;
+			}
+
+			const magic = new TextDecoder().decode(await object.bytes());
+
+			if (magic !== REPLAY_MAGIC) {
+				console.log(
+					"Invalid replay magic:",
+					event.object.key,
+				);
+
+				await env.valorant_replays.delete(
+					event.object.key,
+				);
+
+				await env.replay_db
+					.prepare(`
+						UPDATE uploaders
+						SET invalid_uploads = invalid_uploads + 1
+						WHERE token = ?
+					`)
+					.bind(uploaderToken)
+					.run();
 
 				continue;
 			}
