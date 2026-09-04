@@ -10,7 +10,59 @@
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
+	"ratelimits": [
+		{
+			"name": "UPLOADERS_RATE_LIMITER",
+			"namespace_id": "1001",
+			"simple": {
+				"limit": 1,
+				"period": 60
+			}
+		},
+		{
+			"name": "UPLOAD_RATE_LIMITER",
+			"namespace_id": "1002",
+			"simple": {
+				"limit": 10,
+				"period": 10
+			}
+		},
+		{
+			"name": "STATS_RATE_LIMITER",
+			"namespace_id": "1003",
+			"simple": {
+				"limit": 10,
+				"period": 60
+			}
+		}
+	],
+	"r2_buckets": [
+		{
+			"bucket_name": "valorant-replays",
+			"binding": "valorant_replays"
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "replay_db",
+			"database_name": "replay-db",
+			"database_id": "39f10727-7d7f-41b7-8a1f-55fd1063c140"
+		}
+	],
+	"queues": {
+		"producers": [
+			{
+				"queue": "replay-validation",
+				"binding": "replay_validation"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "replay-validation"
+			}
+		]
+	},
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -28,7 +80,12 @@
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
+	"vars": {
+		"CLOUDFLARE_ACCOUNT_ID": "13b933c5269c7c34d5575acb55e47594"
+	},
+	"secrets": {
+		"required": ["R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"]
+	}
 	/**
 	 * Static Assets
 	 * https://developers.cloudflare.com/workers/static-assets/binding/
